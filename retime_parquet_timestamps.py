@@ -86,7 +86,13 @@ def main():
     root = Path(args.root).resolve()
     if not root.exists():
         print(f"[ERR] root not found: {root}", file=sys.stderr); sys.exit(1)
-    out_root = root if args.inplace else Path(args.output_dir or (str(root) + "_retimed")).resolve()
+    if args.inplace:
+        out_root = root
+    elif args.output_dir is None:
+        out_root = Path(str(root) + "_retimed").resolve()
+    else:
+        out_root = Path(args.output_dir).resolve()
+    #out_root = root if args.inplace else Path(args.output_dir or (str(root) + "_retimed")).resolve()
 
     files = sorted(root.rglob(args.pattern))
     if not files:
