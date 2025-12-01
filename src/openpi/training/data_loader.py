@@ -51,11 +51,32 @@ class DataLoader(Protocol[T_co]):
 
 
 class TransformedDataset(Dataset[T_co]):
-    def __init__(self, dataset: Dataset, transforms: Sequence[_transforms.DataTransformFn]):
+    def __init__(self, dataset: Dataset, transforms: Sequence[_transforms.DataTransformFn], skip_errors: bool = False):
         self._dataset = dataset
         self._transform = _transforms.compose(transforms)
+        self._skip_errors = skip_errors
+        self._failed_indices = set()
 
     def __getitem__(self, index: SupportsIndex) -> T_co:
+        if self._skip_errors:
+            idx = index.__index__()
+            max_retries = 100
+            for attempt in range(max_retries):
+                try:
+                    return self._transform(self._dataset[idx])
+                except RuntimeError as e:
+                    if "Invalid frame index" in str(e):
+                        # Log once per index
+                        if idx not in self._failed_indices:
+                            self._failed_indices.add(idx)
+                            logging.warning(f"Skipping index {idx} due to frame index error: {e}")
+                        # Try next index
+                        idx = (idx + 1) % len(self._dataset)
+                        if idx == index.__index__():
+                            raise RuntimeError(f"Could not find valid sample after {max_retries} attempts")
+                    else:
+                        raise
+            raise RuntimeError(f"Could not load sample after {max_retries} retries")
         return self._transform(self._dataset[index])
 
     def __len__(self) -> int:
@@ -167,14 +188,14 @@ def create_torch_dataset(
             #     "percentile_mixing_method": "weighted_average",
             # },
         )
-    else:   
+    else:
         dataset_meta = lerobot_dataset.LeRobotDatasetMetadata(repo_id)
-        dataset = lerobot_dataset.LeRobotDataset(
+        dataset =lerobot_dataset.LeRobotDataset(
             data_config.repo_id,
             delta_timestamps={
                 key: [t / dataset_meta.fps for t in range(action_horizon)] for key in data_config.action_sequence_keys
             },
-            # tolerance_s=1.0,
+            tolerance_s=1e-3,  # Very small tolerance to prevent frame index overflow
         )
 
     if data_config.prompt_from_task:

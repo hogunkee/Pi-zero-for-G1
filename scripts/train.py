@@ -140,6 +140,7 @@ def train_step(
     state: training_utils.TrainState,
     batch: tuple[_model.Observation, _model.Actions],
 ) -> tuple[training_utils.TrainState, dict[str, at.Array]]:
+
     model = nnx.merge(state.model_def, state.params)
     model.train()
 

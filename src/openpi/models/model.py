@@ -31,6 +31,7 @@ class ModelType(enum.Enum):
     """Supported model types."""
 
     PI0 = "pi0"
+    PI0_CUSTOM = "pi0_custom"
     PI0_FAST = "pi0_fast"
     PI05 = "pi05"
 
@@ -213,13 +214,15 @@ class BaseModelConfig(abc.ABC):
     """Configuration shared by all models. Specific models should inherit from this class, and implement the `create`
     method to create the corresponding model.
     """
-
+    
     # Action space dimension.
     action_dim: int
     # Action sequence length.
     action_horizon: int
     # Tokenized prompt maximum length.
     max_token_len: int
+    # State space dimension.
+    state_dim: int = 0
 
     @property
     @abc.abstractmethod
@@ -264,10 +267,11 @@ class BaseModel(nnx.Module, abc.ABC):
     """Base class for all model implementations. Specific models should inherit from this class. They should call
     super().__init__() to initialize the shared attributes (action_dim, action_horizon, and max_token_len).
     """
-
+    
     action_dim: int
     action_horizon: int
     max_token_len: int
+    state_dim: int = 0
 
     @abc.abstractmethod
     def compute_loss(

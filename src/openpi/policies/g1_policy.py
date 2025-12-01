@@ -34,6 +34,11 @@ class G1Inputs(transforms.DataTransformFn):
     model_type: _model.ModelType = _model.ModelType.PI0
 
     def __call__(self, data: dict) -> dict:
+        # data: ['actions', 'observation/image', 'prompt', 'state']
+        # data['actions']: (16,31)
+        # data['state']: (43)
+        # data['prompt']: 'Pick up the cup and place it on the plate'
+        # data['observation/image']: (3, 480, 640)
         # First, concatenate the joints and gripper into the state vector.
         # state = np.concatenate([data["left_arm"], data["right_arm"], data["left_hand"], data["right_hand"]])
 

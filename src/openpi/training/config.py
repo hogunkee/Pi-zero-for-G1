@@ -123,6 +123,17 @@ class ModelTransformFactory(GroupFactory):
                         _transforms.PadStatesAndActions(model_config.action_dim),
                     ],
                 )
+            case _model.ModelType.PI0_CUSTOM:
+                return _transforms.Group(
+                    inputs=[
+                        _transforms.InjectDefaultPrompt(self.default_prompt),
+                        _transforms.ResizeImages(224, 224),
+                        _transforms.TokenizePrompt(
+                            _tokenizer.PaligemmaTokenizer(model_config.max_token_len),
+                        ),
+                        _transforms.CustomPadStatesAndActions(model_config.state_dim, model_config.action_dim),
+                    ],
+                )
             case _model.ModelType.PI05:
                 assert isinstance(model_config, pi0_config.Pi0Config)
                 return _transforms.Group(
@@ -563,7 +574,7 @@ class TrainConfig:
     # Base directory for config assets (e.g., norm stats).
     assets_base_dir: str = "./assets"
     # Base directory for checkpoints.
-    checkpoint_base_dir: str = "./checkpoints"
+    checkpoint_base_dir: str ="/data1/hogun/pizero_ckpts" #"./checkpoints"
 
     # Random seed that will be used by random generators during training.
     seed: int = 42
@@ -1030,6 +1041,90 @@ _CONFIGS = [
         exp_name="debug_pi05",
         wandb_enabled=False,
     ),
+
+    # Locomanip-phase training
+    # g1 fine-tuning config
+    TrainConfig(
+        name="g1_locomanip_phase_pi0_full",
+        model=pi0_config.Pi0Config(action_horizon=16,),
+        # model=pi0_config.Pi0CustomConfig(action_horizon=16,),
+        data=LeRobotG1DataConfig(
+            repo_id="/data1/hogun/dataset/1130_Kitchen_LocoManip",
+            # repo_id="/data1/hogun/dataset/1124_Kitchen_Manip_Data", 
+            # repo_id="/data1/hogun/dataset/1123_Dataset1", 
+            # repo_id="/data1/hogun/dataset/1116_Robocasa_LocoManipPhase_Upperonly", 
+            # repo_id="/data1/hogun/dataset/1112_PnpCupPlate_LocoManipPhase_Upperonly", 
+            # repo_id="/data1/hogun/dataset/1112_PnpCupPlate_LocoManipPhase", 
+            # repo_id="/data1/hogun/dataset/G1_Phase_Locomanip", 
+            base_config=DataConfig(prompt_from_task=True),
+            assets=AssetsConfig(
+                assets_dir="/data1/hogun/dataset/1130_Kitchen_LocoManip", 
+                asset_id="g1",
+            ),
+        ),
+        weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_base/params"),
+        num_train_steps=50_000,
+        batch_size=4,
+        save_interval=10_000,
+    ),
+    TrainConfig(
+        name="g1_locomanip_twotask_pi0_full",
+        model=pi0_config.Pi0Config(action_horizon=16,),
+        data=LeRobotG1DataConfig(
+            repo_id="/data1/hogun/dataset/1117_Robocasa_LocoManipPhase_Smooth", 
+            base_config=DataConfig(prompt_from_task=True),
+            assets=AssetsConfig(
+                assets_dir="/data1/hogun/dataset/1117_Robocasa_LocoManipPhase_Smooth", 
+                asset_id="g1",
+            ),
+        ),
+        weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_base/params"),
+        num_train_steps=40_000,
+        batch_size=4,
+        save_interval=5_000,
+    ),
+
+    # Loco-phase training
+    # g1 fine-tuning config
+    TrainConfig(
+        name="g1_locophase_pi0_full",
+        model=pi0_config.Pi0CustomConfig(action_horizon=16,),
+        data=LeRobotG1DataConfig(
+            repo_id="/data1/hogun/dataset/G1_Phase_Locomotion_AMO",
+            base_config=DataConfig(prompt_from_task=True),
+            assets=AssetsConfig(
+                assets_dir="/data1/hogun/dataset/G1_Phase_Locomotion_AMO",
+                asset_id="g1",
+            ),
+        ),
+        weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_base/params"),
+        num_train_steps=20_000,
+        batch_size=4,
+        save_interval=5_000,
+    ),
+    # g1 lora fine-tuning config
+    TrainConfig(
+        name="g1_locophase_pi0_lora",
+        model=pi0_config.Pi0CustomConfig(action_horizon=16, paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"),
+        data=LeRobotG1DataConfig(
+            repo_id="/data1/hogun/dataset/G1_Phase_Locomotion_AMO",
+            base_config=DataConfig(prompt_from_task=True),
+            assets=AssetsConfig(
+                assets_dir="/data1/hogun/dataset/G1_Phase_Locomotion_AMO",
+                asset_id="g1",
+            ),
+        ),
+        weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_base/params"),
+        num_train_steps=20_000,
+        freeze_filter=pi0_config.Pi0Config(
+            paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"
+        ).get_freeze_filter(),
+        ema_decay=None,
+        batch_size=4, #32
+        save_interval=5_000,
+    ),
+
+    # G1 manipulation training
     # g1 fine-tuning config
     TrainConfig(
         # This config is for fine-tuning pi0-G1 on a custom (smaller) G1 dataset.
@@ -1055,9 +1150,9 @@ _CONFIGS = [
         ),
         # weight_loader=weight_loaders.CheckpointWeightLoader("/data1/hogun/openpi/openpi-assets/checkpoints/pi0_base/params"),
         weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_base/params"),
-        num_train_steps=20_000,
+        num_train_steps=50_000,
         batch_size=4, #32
-        save_interval=2000,
+        save_interval=10_000,
     ),
     # g1 lora fine-tuning config
     TrainConfig(
@@ -1074,13 +1169,13 @@ _CONFIGS = [
             ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_base/params"),
-        num_train_steps=20_000,
+        num_train_steps=50_000,
         freeze_filter=pi0_config.Pi0Config(
             paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora"
         ).get_freeze_filter(),
         ema_decay=None,
         batch_size=4, #32
-        save_interval=2000,
+        save_interval=10_000,
     ),
     # g1 fast fine-tuning config
     TrainConfig(
