@@ -134,6 +134,17 @@ class ModelTransformFactory(GroupFactory):
                         _transforms.CustomPadStatesAndActions(model_config.state_dim, model_config.action_dim),
                     ],
                 )
+            case _model.ModelType.PI0_PHASE:
+                return _transforms.Group(
+                    inputs=[
+                        _transforms.InjectDefaultPrompt(self.default_prompt),
+                        _transforms.ResizeImages(224, 224),
+                        _transforms.TokenizePrompt(
+                            _tokenizer.PaligemmaTokenizer(model_config.max_token_len),
+                        ),
+                        _transforms.CustomPadStatesAndActions(model_config.state_dim, model_config.action_dim),
+                    ],
+                )
             case _model.ModelType.PI05:
                 assert isinstance(model_config, pi0_config.Pi0Config)
                 return _transforms.Group(
@@ -1040,6 +1051,23 @@ _CONFIGS = [
         overwrite=True,
         exp_name="debug_pi05",
         wandb_enabled=False,
+    ),
+    # Pi0Phase
+    TrainConfig(
+        name="g1_locomanip_pi0phase",
+        model=pi0_config.Pi0PhaseConfig(action_horizon=16,),
+        data=LeRobotG1DataConfig(
+            repo_id="/data1/hogun/dataset/1202_Kitchen_LocoManip/phase",
+            base_config=DataConfig(prompt_from_task=True),
+            assets=AssetsConfig(
+                assets_dir="/data1/hogun/dataset/1202_Kitchen_LocoManip/phase", 
+                asset_id="g1",
+            ),
+        ),
+        weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_base/params"),
+        num_train_steps=30_000,
+        batch_size=4,
+        save_interval=10_000,
     ),
 
     # Locomanip-phase training
