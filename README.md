@@ -1,3 +1,19 @@
+# Scripts
+## Training example
+dataset_list=("/data1/hogun/dataset/1130_Kitchen_LocoManip")
+CUDA_VISIBLE_DEVICES=0 python scripts/gr00t_finetune.py \
+    --dataset-path ${dataset_list[@]} \
+    --num-gpus 1 --batch-size 8 \
+    --tune_llm --tune_visual --tune_projector --tune_diffusion_model \
+    --output-dir <OUTPUT_DIR> \
+    --data-config unitree_g1 --embodiment_tag g1 \
+    --max-steps 30000 --save-steps 10000
+
+## Inference
+CUDA_VISIBLE_DEVICES=1 python scripts/inference_service.py --server \
+--model-path <CKPT_DIR> \
+--data-config unitree_g1 --embodiment-tag g1
+
 # openpi
 
 openpi holds open-source models and packages for robotics, published by the [Physical Intelligence team](https://www.physicalintelligence.company/).
