@@ -1,24 +1,30 @@
-# Scripts
+## Scripts
 
-## Training example
+### config.py 세팅
+
+- Checkpoint path
+    - 588라인의 checkpoint_base_dir 변경
+  
+- TrainConfig
+    - pi0_g1_finetune 이름을 가지는 TrainConfig 수정 (새로 만들어도 됨)
+    - data의 repo_id와 assets의 assets_dir을 데이터셋 경로로 세팅!
+
+### Training
 
 ```bash
-dataset_list=("/data1/hogun/dataset/1130_Kitchen_LocoManip")
-CUDA_VISIBLE_DEVICES=0 python scripts/gr00t_finetune.py \
-    --dataset-path ${dataset_list[@]} \
-    --num-gpus 1 --batch-size 8 \
-    --tune_llm --tune_visual --tune_projector --tune_diffusion_model \
-    --output-dir <OUTPUT_DIR> \
-    --data-config unitree_g1 --embodiment_tag g1 \
-    --max-steps 30000 --save-steps 10000
+export CUDA_VISIBLE_DEVICES=1
+XLA_PYTHON_CLIENT_MEM_FRACTION=0.8 uv run scripts/train.py pi0_g1_finetune --exp-name=<EXP_NAME>
 ```
 
-## Inference
+체크포인트는 checkpoint_base_dir 안에 exp_name으로 폴더가 생성되어 저장됨
+
+### Inference
 
 ```bash
-CUDA_VISIBLE_DEVICES=1 python scripts/inference_service.py --server \
---model-path <CKPT_DIR> \
---data-config unitree_g1 --embodiment-tag g1
+export CUDA_VISIBLE_DEVICES=1
+XLA_PYTHON_CLIENT_MEM_FRACTION=0.3 uv run scripts/serve_policy.py \
+	policy:checkpoint --policy.config=g1_locomanip_phase_pi0_full \
+	--policy.dir=<CKPT_DIR>
 ```
 
 # openpi
