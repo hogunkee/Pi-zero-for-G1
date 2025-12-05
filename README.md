@@ -1,5 +1,8 @@
 # Scripts
+
 ## Training example
+
+```bash
 dataset_list=("/data1/hogun/dataset/1130_Kitchen_LocoManip")
 CUDA_VISIBLE_DEVICES=0 python scripts/gr00t_finetune.py \
     --dataset-path ${dataset_list[@]} \
@@ -8,11 +11,15 @@ CUDA_VISIBLE_DEVICES=0 python scripts/gr00t_finetune.py \
     --output-dir <OUTPUT_DIR> \
     --data-config unitree_g1 --embodiment_tag g1 \
     --max-steps 30000 --save-steps 10000
+```
 
 ## Inference
+
+```bash
 CUDA_VISIBLE_DEVICES=1 python scripts/inference_service.py --server \
 --model-path <CKPT_DIR> \
 --data-config unitree_g1 --embodiment-tag g1
+```
 
 # openpi
 
