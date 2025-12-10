@@ -16,14 +16,39 @@ def sigmoid_smooth(x, center, width):
     """Sigmoid 함수를 사용한 부드러운 전환"""
     return 1.0 / (1.0 + np.exp(-(x - center) / width))
 
-
 def linear_smooth(x, start, end, start_val, end_val):
     """선형 보간"""
     if end <= start:
         return np.full_like(x, start_val, dtype=np.float64)
     alpha = np.clip((x - start) / (end - start), 0, 1)
     return start_val + alpha * (end_val - start_val)
+    
+def shift_phase_transitions(phase_values, shift_size):
+    """
+    Phase 값들을 오른쪽으로 shift합니다.
 
+    Args:
+        phase_values: Phase 값 배열
+        shift_size: 오른쪽으로 shift할 크기
+
+    Returns:
+        Shifted phase 값 배열
+    """
+    phase = np.array(phase_values, dtype=np.float64)
+
+    if shift_size <= 0:
+        return phase
+
+    # shift_size가 배열 길이보다 크면 전체를 첫 값으로 채움
+    if shift_size >= len(phase):
+        return np.full_like(phase, phase[0], dtype=np.float64)
+
+    # 오른쪽으로 shift: 왼쪽은 첫 값으로 채우고, 오른쪽은 원래 값들을 이동
+    shifted = np.empty_like(phase, dtype=np.float64)
+    shifted[:shift_size] = phase[0]  # 왼쪽에 생기는 공간은 첫 값으로 채움
+    shifted[shift_size:] = phase[:-shift_size]  # 나머지는 원래 값을 shift
+
+    return shifted
 
 def smooth_phase_transitions(phase_values, window_size=10, method='sigmoid'):
     """
@@ -48,16 +73,21 @@ def smooth_phase_transitions(phase_values, window_size=10, method='sigmoid'):
         # 전환 타입 확인
         from_val = phase[trans_idx]
         to_val = phase[trans_idx + 1]
-        
-        # Smoothing 범위 결정
-        start_idx = max(0, trans_idx - window_size // 2)
-        end_idx = min(len(phase), trans_idx + 1 + window_size // 2)
+
+        if from_val < to_val:  # 0 → 1
+            start_idx = max(0, trans_idx - window_size)
+            end_idx = min(len(phase), trans_idx + 1)
+        else:  # 1 → 0
+            start_idx = max(0, trans_idx)
+            end_idx = min(len(phase), trans_idx + 1 + window_size)
         
         # Smoothing 적용
-        if method == 'sigmoid':
+        if method.split('-')[0] == 'sigmoid':
             # Sigmoid 중심을 transition point로
-            center = trans_idx + 0.5
-            width = window_size / 6.0  # Sigmoid의 기울기 조절
+            center = (start_idx + end_idx)/2
+            width = (end_idx - start_idx) / 12.0
+            #center = trans_idx + 0.5
+            #width = window_size / 6.0  # Sigmoid의 기울기 조절
             
             for i in range(start_idx, end_idx):
                 if from_val < to_val:  # 0 → 1
@@ -65,15 +95,14 @@ def smooth_phase_transitions(phase_values, window_size=10, method='sigmoid'):
                 else:  # 1 → 0
                     smoothed[i] = 1.0 - sigmoid_smooth(i, center, width)
         
-        elif method == 'linear':
+        elif method.split('-')[0] == 'linear':
             # 선형 보간
             for i in range(start_idx, end_idx):
                 smoothed[i] = linear_smooth(i, start_idx, end_idx - 1, from_val, to_val)
     
     return smoothed
 
-
-def process_parquet_file(src_path: Path, dst_path: Path, phase_col_idx: int, 
+def process_parquet_file(src_path: Path, dst_path: Path, phase_col_idx: int, shift_size: int,
                          window_size: int, method: str, dry_run: bool = False):
     """
     Parquet 파일을 읽어서 phase 컬럼을 smoothing하고 저장
@@ -126,6 +155,10 @@ def process_parquet_file(src_path: Path, dst_path: Path, phase_col_idx: int,
             'smoothed': False
         }
     
+    if df['task_index'][0] in [5,6,7,8,9,10,11,12,13,14,15]:
+        # Phase shift 적용
+        phase_values = shift_phase_transitions(phase_values, shift_size)
+    
     # Phase smoothing 적용
     smoothed_phase = smooth_phase_transitions(phase_values, window_size, method)
     
@@ -163,8 +196,10 @@ def main():
     parser.add_argument("root", type=str, help="데이터셋 루트 경로")
     parser.add_argument("--phase_index", type=int, default=30, 
                         help="Phase 컬럼의 시작 인덱스 (기본값: 30)")
-    parser.add_argument("--window_size", type=int, default=10,
-                        help="Smoothing window 크기 (기본값: 10)")
+    parser.add_argument("--shift_size", type=int, default=70,
+                        help="Shifting window 크기 (기본값: 70)")
+    parser.add_argument("--window_size", type=int, default=50,
+                        help="Smoothing window 크기 (기본값: 50)")
     parser.add_argument("--method", choices=['sigmoid', 'linear'], default='sigmoid',
                         help="Smoothing 방법 (기본값: sigmoid)")
     parser.add_argument("--output_dir", type=str, default=None,
@@ -227,7 +262,7 @@ def main():
                 shutil.copy2(src_path, backup_path)
         
         stats = process_parquet_file(
-            src_path, dst_path, args.phase_index, 
+            src_path, dst_path, args.phase_index, args.shift_size,
             args.window_size, args.method, args.dry_run
         )
         

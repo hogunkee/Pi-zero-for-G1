@@ -179,9 +179,9 @@ def merge_datasets(data_dir1, data_dir2, output_dir, fps=None, timestamp_unit="s
         df = table.to_pandas()
 
         # 태스크 0
-        task_cols = detect_task_cols(df)
-        for col in task_cols:
-            df[col] = [0] * len(df)
+        # task_cols = detect_task_cols(df)
+        # for col in task_cols:
+        #     df[col] = [0] * len(df)
 
         if fps is not None:
             # 타임스탬프 컬럼 찾기
@@ -212,9 +212,9 @@ def merge_datasets(data_dir1, data_dir2, output_dir, fps=None, timestamp_unit="s
             df['index'] = df['index'] + last_index1 + 1
 
         # 태스크 1
-        task_cols = detect_task_cols(df)
-        for col in task_cols:
-            df[col] = [1] * len(df)
+        # task_cols = detect_task_cols(df)
+        # for col in task_cols:
+        #     df[col] = [1] * len(df)
         
         # 타임스탬프 리타이밍 (fps가 지정된 경우)
         if fps is not None:
@@ -281,12 +281,13 @@ def merge_datasets(data_dir1, data_dir2, output_dir, fps=None, timestamp_unit="s
         merged_meta['episodes'] = merged_episodes
     
     # tasks.jsonl 병합 (있을 경우)
-    if 'tasks' in meta1 and 'tasks' in meta2:
-        merged_meta['tasks'] = meta1['tasks'] + meta2['tasks']
-    elif 'tasks' in meta1:
-        merged_meta['tasks'] = meta1['tasks']
-    elif 'tasks' in meta2:
-        merged_meta['tasks'] = meta2['tasks']
+    merged_meta['tasks'] = meta1['tasks']
+    # if 'tasks' in meta1 and 'tasks' in meta2:
+    #     merged_meta['tasks'] = meta1['tasks'] + meta2['tasks']
+    # elif 'tasks' in meta1:
+    #     merged_meta['tasks'] = meta1['tasks']
+    # elif 'tasks' in meta2:
+    #     merged_meta['tasks'] = meta2['tasks']
     
     # stats.json은 새로 계산해야 하므로 일단 dataset1의 것을 사용
     if 'stats' in meta1:
