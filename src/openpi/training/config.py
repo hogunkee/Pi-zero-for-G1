@@ -1052,49 +1052,43 @@ _CONFIGS = [
         exp_name="debug_pi05",
         wandb_enabled=False,
     ),
+    # 1212 Training..
     # Pi0Phase
     TrainConfig(
         name="g1_locomanip_pi0phase",
-        model=pi0_config.Pi0PhaseConfig(action_horizon=16,),
+        model=pi0_config.Pi0PhaseConfig(action_horizon=50,), #16
         data=LeRobotG1DataConfig(
-            repo_id="/data1/hogun/dataset/1202_Kitchen_LocoManip/phase",
+            repo_id="/data1/hogun/dataset/1211_Mix",
             base_config=DataConfig(prompt_from_task=True),
             assets=AssetsConfig(
-                assets_dir="/data1/hogun/dataset/1202_Kitchen_LocoManip/phase", 
-                asset_id="g1",
-            ),
-        ),
-        weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_base/params"),
-        num_train_steps=30_000,
-        batch_size=4,
-        save_interval=10_000,
-    ),
-
-    # Locomanip-phase training
-    # g1 fine-tuning config
-    TrainConfig(
-        name="g1_locomanip_phase_pi0_full",
-        model=pi0_config.Pi0Config(action_horizon=16,),
-        # model=pi0_config.Pi0CustomConfig(action_horizon=16,),
-        data=LeRobotG1DataConfig(
-            repo_id="/data1/hogun/dataset/1130_Kitchen_LocoManip",
-            # repo_id="/data1/hogun/dataset/1124_Kitchen_Manip_Data", 
-            # repo_id="/data1/hogun/dataset/1123_Dataset1", 
-            # repo_id="/data1/hogun/dataset/1116_Robocasa_LocoManipPhase_Upperonly", 
-            # repo_id="/data1/hogun/dataset/1112_PnpCupPlate_LocoManipPhase_Upperonly", 
-            # repo_id="/data1/hogun/dataset/1112_PnpCupPlate_LocoManipPhase", 
-            # repo_id="/data1/hogun/dataset/G1_Phase_Locomanip", 
-            base_config=DataConfig(prompt_from_task=True),
-            assets=AssetsConfig(
-                assets_dir="/data1/hogun/dataset/1130_Kitchen_LocoManip", 
+                assets_dir="/data1/hogun/dataset/1211_Mix", 
                 asset_id="g1",
             ),
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_base/params"),
         num_train_steps=50_000,
         batch_size=4,
-        save_interval=10_000,
+        save_interval=50_000,
     ),
+    # Locomanip-phase training
+    # g1 fine-tuning config
+    TrainConfig(
+        name="g1_locomanip_pi0",
+        model=pi0_config.Pi0Config(action_horizon=50,),
+        data=LeRobotG1DataConfig(
+            repo_id="/data1/hogun/dataset/1211_Mix",
+            base_config=DataConfig(prompt_from_task=True),
+            assets=AssetsConfig(
+                assets_dir="/data1/hogun/dataset/1211_Mix", 
+                asset_id="g1",
+            ),
+        ),
+        weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi0_base/params"),
+        num_train_steps=50_000,
+        batch_size=4,
+        save_interval=50_000,
+    ),
+
     TrainConfig(
         name="g1_locomanip_twotask_pi0_full",
         model=pi0_config.Pi0Config(action_horizon=16,),

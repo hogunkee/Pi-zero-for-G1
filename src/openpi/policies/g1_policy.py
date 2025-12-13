@@ -69,7 +69,7 @@ class G1Inputs(transforms.DataTransformFn):
 class G1Outputs(transforms.DataTransformFn):
 
     def __call__(self, data: dict) -> dict:
-        # 31 dof actions for 2 arms and 2 hands and 1 waist
-        return {"actions": np.asarray(data["actions"][:, :31])}
+        # 32 dof actions for 2 arms and 2 hands and 3 loco and 1 phase
+        return {"actions": np.asarray(data["actions"][:, :32])}
 		# 28 dof actions for 2 arms and 2 hands
         # return {"actions": np.asarray(data["actions"][:, :28])}

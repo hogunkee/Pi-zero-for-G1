@@ -39,3 +39,6 @@
 {"task_index": 38, "task": "Find the cup near the drawer"}
 {"task_index": 39, "task": "Find the tissue near the drawer"}
 {"task_index": 40, "task": "Find the scrubber near the drawer"}
+{"task_index": 41, "task": "Move to the sink"}
+{"task_index": 42, "task": "Move to the trash"}
+{"task_index": 43, "task": "Move to the drawer"}

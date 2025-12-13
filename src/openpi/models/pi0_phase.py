@@ -211,14 +211,14 @@ class Pi0Phase(_model.BaseModel):
         )
         v_t = self.action_out_proj(suffix_out[:, -self.action_horizon :])
         v_upper_t = v_t[:,:,:28]
-        v_loco_t = v_t[:,:,28:30]
-        v_phase_t = v_t[:,:,30:31]
+        v_loco_t = v_t[:,:,28:31]
+        v_phase_t = v_t[:,:,31:32]
         
-        gt_phase_t = (actions[:,:,30:31]+1)/2
+        gt_phase_t = (actions[:,:,31:32]+1)/2
         # phase-weighted loss
         upper_loss = jnp.mean(gt_phase_t * jnp.square(v_upper_t - u_t[:,:,:28]), axis=-1)
-        loco_loss = jnp.mean((1-gt_phase_t) * jnp.square(v_loco_t - u_t[:,:,28:30]), axis=-1)
-        phase_loss = jnp.mean(jnp.square(v_phase_t - u_t[:,:,30:31]), axis=-1)
+        loco_loss = jnp.mean((1-gt_phase_t) * jnp.square(v_loco_t - u_t[:,:,28:31]), axis=-1)
+        phase_loss = jnp.mean(jnp.square(v_phase_t - u_t[:,:,31:32]), axis=-1)
         loss = upper_loss + loco_loss + phase_loss
         return loss
 
@@ -246,8 +246,8 @@ class Pi0Phase(_model.BaseModel):
             [prefix_tokens, suffix_tokens], mask=attn_mask, positions=positions, adarms_cond=[None, adarms_cond]
         )
         v_t = self.action_out_proj(suffix_out[:, -self.action_horizon :])
-        phase_t = v_t[:,:,30]
-        return jnp.mean(jnp.square(phase_t - u_t[:,:,30]), axis=-1)
+        phase_t = v_t[:,:,31]
+        return jnp.mean(jnp.square(phase_t - u_t[:,:,31]), axis=-1)
     
     def compute_upper_loss(
         self, rng: at.KeyArrayLike, observation: _model.Observation, actions: _model.Actions, *, train: bool = False
@@ -300,8 +300,8 @@ class Pi0Phase(_model.BaseModel):
             [prefix_tokens, suffix_tokens], mask=attn_mask, positions=positions, adarms_cond=[None, adarms_cond]
         )
         v_t = self.action_out_proj(suffix_out[:, -self.action_horizon :])
-        v_loco_t = v_t[:,:,28:30]
-        return jnp.mean(jnp.square(v_loco_t - u_t[:,:,28:30]), axis=-1)
+        v_loco_t = v_t[:,:,28:31]
+        return jnp.mean(jnp.square(v_loco_t - u_t[:,:,28:31]), axis=-1)
     
     @override
     def sample_actions(

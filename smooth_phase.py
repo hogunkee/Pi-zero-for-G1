@@ -194,7 +194,7 @@ def process_parquet_file(src_path: Path, dst_path: Path, phase_col_idx: int, shi
 def main():
     parser = argparse.ArgumentParser(description="LeRobot 데이터셋의 binary phase 값을 smoothing")
     parser.add_argument("root", type=str, help="데이터셋 루트 경로")
-    parser.add_argument("--phase_index", type=int, default=30, 
+    parser.add_argument("--phase_index", type=int, default=31, 
                         help="Phase 컬럼의 시작 인덱스 (기본값: 30)")
     parser.add_argument("--shift_size", type=int, default=70,
                         help="Shifting window 크기 (기본값: 70)")
